@@ -11,11 +11,27 @@ export interface ChatRequest {
   message: string;
   conversationId?: string;
   history?: ChatMessage[];
+  images?: Array<{
+    format: string;
+    source: {
+      bytes: string;
+    };
+  }>;
 }
 
 export interface ChatResponse {
-  response: string;
+  response?: string;        // Old format
+  content?: string;         // New format from your backend
+  role?: string;
+  id?: number;
+  chat_id?: number;
+  created_at?: string;
   conversationId?: string;
+  voiceSettings?: {
+    voice?: string;
+    speed?: number;
+    pitch?: number;
+  };
 }
 
 /**
@@ -23,7 +39,10 @@ export interface ChatResponse {
  */
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    const response = await fetch(`${API_URL}/api/chat`, {
+    console.log('Sending request to:', `${API_URL}/chat`);
+    console.log('Request payload:', request);
+    
+    const response = await fetch(`${API_URL}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,11 +50,16 @@ export const sendChatMessage = async (request: ChatRequest): Promise<ChatRespons
       body: JSON.stringify(request),
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('Response data:', data);
     return data;
   } catch (error) {
     console.error('Error sending chat message:', error);
@@ -53,7 +77,7 @@ export const streamChatMessage = async (
   onError: (error: Error) => void
 ): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/api/chat/stream`, {
+    const response = await fetch(`${API_URL}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

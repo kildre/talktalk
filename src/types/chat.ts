@@ -1,9 +1,22 @@
+export interface ChatImage {
+  id: string;
+  data: string; // base64 encoded image
+  mimeType: string;
+  name?: string;
+}
+
 export interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
   isLoading?: boolean;
+  images?: ChatImage[];
+  voiceSettings?: {
+    voice?: string;
+    speed?: number;
+    pitch?: number;
+  };
 }
 
 export interface Conversation {

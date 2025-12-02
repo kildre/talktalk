@@ -3,14 +3,21 @@ import {
   Box,
   Typography,
 } from '@mui/material';
-import {
-  SmartToy as BotIcon,
-} from '@mui/icons-material';
 import { useChatStore } from '../store/chatStore';
+import TalkTalkLogo from '../assets/TalkTalk_logoMark.svg';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { sendChatMessage } from '../services/api';
 import type { ChatMessage } from '../services/api';
+import type { ChatImage } from '../types/chat';
+
+interface ImageAttachment {
+  id: string;
+  data: string;
+  mimeType: string;
+  name?: string;
+  preview: string;
+}
 
 export const ChatInterface: React.FC = () => {
   const {
@@ -38,13 +45,22 @@ export const ChatInterface: React.FC = () => {
     }
   }, [currentConversationId, createNewConversation]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, imageAttachments?: ImageAttachment[]) => {
     if (!currentConversationId) return;
+
+    // Convert image attachments to ChatImage format
+    const images: ChatImage[] | undefined = imageAttachments?.map(img => ({
+      id: img.id,
+      data: img.data,
+      mimeType: img.mimeType,
+      name: img.name,
+    }));
 
     // Add user message
     addMessage(currentConversationId, {
       content,
       role: 'user',
+      images,
     });
 
     // Add loading message for assistant
@@ -65,11 +81,23 @@ export const ChatInterface: React.FC = () => {
           content: msg.content,
         }));
 
-      // Call the backend API
+      // Call the backend API with images
       const response = await sendChatMessage({
         message: content,
         conversationId: currentConversationId,
         history,
+        images: images?.map(img => {
+          // Extract base64 data from data URL
+          const base64Data = img.data.split(',')[1] || img.data;
+          // Convert mime type to format (e.g., 'image/png' -> 'png')
+          const format = img.mimeType.split('/')[1] || 'png';
+          return {
+            format,
+            source: {
+              bytes: base64Data,
+            },
+          };
+        }),
       });
 
       // Update the loading message with actual response
@@ -77,9 +105,13 @@ export const ChatInterface: React.FC = () => {
       const loadingMessage = updatedMessages.find(msg => msg.isLoading);
       
       if (loadingMessage) {
+        // Handle both response formats (response or content)
+        const messageContent = response.content || response.response || 'No response received';
+        
         updateMessage(currentConversationId, loadingMessage.id, {
-          content: response.response,
+          content: messageContent,
           isLoading: false,
+          voiceSettings: response.voiceSettings, // Pass voice settings from backend
         });
       }
     } catch (error) {
@@ -103,60 +135,92 @@ export const ChatInterface: React.FC = () => {
   const EmptyState = () => (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '50vh',
         textAlign: 'center',
         color: 'text.secondary',
+        width: '100%',
+        mb: '8vh',
       }}
     >
-      <BotIcon sx={{ fontSize: 64, mb: 2, color: 'primary.main' }} />
-      <Typography variant="h4" gutterBottom>
-        Welcome to TalkTalk
+      <Box sx={{ display: 'inline-block', mb: 2.5 }}>
+        <img src={TalkTalkLogo} alt="TalkTalk" style={{ width: 80, height: 80 }} />
+      </Box>
+      <Typography variant="h3" sx={{ fontWeight: 600, color: '#1a1a1a', mb: 0.5, fontSize: '2rem', lineHeight: 1.2 }}>
+        What are We Building Today?
       </Typography>
-      <Typography variant="body1" sx={{ maxWidth: 400 }}>
-        Start a conversation by typing a message below. I'm here to help with questions, 
-        creative tasks, analysis, and more!
-      </Typography>
+      
+      
+      {/* Centered Input */}
+      <Box sx={{ width: '100%', maxWidth: '768px', mx: 'auto', px: 2 }}>
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={isTyping}
+        />
+      </Box>
     </Box>
   );
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
         height: '100vh',
-        backgroundColor: 'background.default',
+        width: '100%',
+        backgroundColor: '#ffffff',
+        ...(messages.length > 0 && {
+          display: 'flex',
+          flexDirection: 'column',
+        }),
       }}
     >
-      {/* Messages Area */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          backgroundColor: 'background.default',
-        }}
-      >
-        {messages.length === 0 ? (
+      {messages.length === 0 ? (
+        /* Empty State with centered welcome and input */
+        <Box
+          sx={{
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'auto',
+            backgroundColor: 'transparent',
+            width: '100%',
+          }}
+        >
           <EmptyState />
-        ) : (
-          <Box>
-            {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
-            <div ref={messagesEndRef} />
+        </Box>
+      ) : (
+        <>
+          {/* Messages Area */}
+          <Box
+            sx={{
+              flex: 1,
+              overflow: 'auto',
+              backgroundColor: 'transparent',
+            }}
+          >
+            <Box sx={{ 
+              maxWidth: '900px',
+              mx: 'auto',
+              px: 2,
+            }}>
+              {messages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
+              ))}
+              <div ref={messagesEndRef} />
+            </Box>
           </Box>
-        )}
-      </Box>
 
-      {/* Input Area */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        disabled={isTyping}
-      />
+          {/* Input Area for chat state */}
+          <Box
+            sx={{
+              backgroundColor: 'white',
+            }}
+          >
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              disabled={isTyping}
+            />
+          </Box>
+        </>
+      )}
     </Box>
   );
 };
