@@ -9,8 +9,7 @@ export interface ChatMessage {
 
 export interface ChatRequest {
   message: string;
-  conversationId?: string;
-  history?: ChatMessage[];
+  chat_id?: number;
   images?: Array<{
     format: string;
     source: {
@@ -39,10 +38,10 @@ export interface ChatResponse {
  */
 export const sendChatMessage = async (request: ChatRequest): Promise<ChatResponse> => {
   try {
-    console.log('Sending request to:', `${API_URL}/chat`);
+    console.log('Sending request to:', `${API_URL}/chat/`);
     console.log('Request payload:', request);
-    
-    const response = await fetch(`${API_URL}/chat`, {
+
+    const response = await fetch(`${API_URL}/chat/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +76,7 @@ export const streamChatMessage = async (
   onError: (error: Error) => void
 ): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/chat/stream`, {
+    const response = await fetch(`${API_URL}/chat/stream/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

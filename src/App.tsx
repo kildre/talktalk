@@ -1,15 +1,40 @@
 import React from 'react';
-import { ThemeProvider, CssBaseline, Box, IconButton } from '@mui/material';
+
+import { ThemeProvider, CssBaseline, Box, IconButton, Button } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { useChatStore } from './store/chatStore';
 import { lightTheme, darkTheme } from './theme';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { useAuth } from './auth/AuthContext';
+import Login from './auth/Login';
+import Register from './auth/Register';
 import './App.css';
+
 
 function App() {
   const { theme, sidebarOpen, toggleSidebar } = useChatStore();
   const currentTheme = theme === 'light' ? lightTheme : darkTheme;
+  const { token, logout } = useAuth();
+  const [showRegister, setShowRegister] = React.useState(false);
+
+  if (!token) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          {showRegister ? (
+            <Box sx={{ position: 'relative' }}>
+              <Register onRegistered={() => setShowRegister(false)} onToggleLogin={() => setShowRegister(false)} />
+            </Box>
+          ) : (
+            <Box sx={{ position: 'relative' }}>
+              <Login onToggleRegister={() => setShowRegister(true)} />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <ThemeProvider theme={currentTheme}>
@@ -17,7 +42,6 @@ function App() {
       <Box sx={{ display: 'flex', height: '100vh' }}>
         {/* Sidebar */}
         <Sidebar open={sidebarOpen} onToggle={toggleSidebar} />
-        
         {/* Main Content */}
         <Box
           component="main"
@@ -52,7 +76,8 @@ function App() {
               <MenuIcon />
             </IconButton>
           )}
-          
+          {/* Add a logout button for convenience */}
+          <Button onClick={logout} sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1000 }}>Logout</Button>
           <ChatInterface />
         </Box>
       </Box>

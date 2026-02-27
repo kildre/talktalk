@@ -77,6 +77,15 @@ export const useChatStore = create<ChatState>()(
       });
     },
 
+    setConversationBackendId: (conversationId: string, backendChatId: number) => {
+      set((state) => {
+        const conversation = state.conversations.find(conv => conv.id === conversationId);
+        if (conversation) {
+          conversation.backendChatId = backendChatId;
+        }
+      });
+    },
+
     toggleSidebar: () => {
       set((state) => {
         state.sidebarOpen = !state.sidebarOpen;

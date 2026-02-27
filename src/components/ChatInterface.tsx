@@ -3,12 +3,13 @@ import {
   Box,
   Typography,
 } from '@mui/material';
+import TalkTalkLogoMark from '../assets/TalkTalk_logoMark.svg';
+import { useAuth } from '../auth/AuthContext';
 import { useChatStore } from '../store/chatStore';
 import TalkTalkLogo from '../assets/TalkTalk_logoMark.svg';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { sendChatMessage } from '../services/api';
-import type { ChatMessage } from '../services/api';
 import type { ChatImage } from '../types/chat';
 
 interface ImageAttachment {
@@ -23,8 +24,10 @@ export const ChatInterface: React.FC = () => {
   const {
     currentConversationId,
     getCurrentMessages,
+    getCurrentConversation,
     addMessage,
     updateMessage,
+    setConversationBackendId,
     createNewConversation,
     isTyping,
     setIsTyping,
@@ -73,19 +76,11 @@ export const ChatInterface: React.FC = () => {
     setIsTyping(true);
 
     try {
-      // Get conversation history
-      const history: ChatMessage[] = getCurrentMessages()
-        .filter(msg => !msg.isLoading)
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        }));
-
       // Call the backend API with images
+      const currentConversation = getCurrentConversation();
       const response = await sendChatMessage({
         message: content,
-        conversationId: currentConversationId,
-        history,
+        chat_id: currentConversation?.backendChatId,
         images: images?.map(img => {
           // Extract base64 data from data URL
           const base64Data = img.data.split(',')[1] || img.data;
@@ -104,14 +99,19 @@ export const ChatInterface: React.FC = () => {
       const updatedMessages = getCurrentMessages();
       const loadingMessage = updatedMessages.find(msg => msg.isLoading);
       
+      // Persist the backend chat_id so subsequent messages continue the same chat
+      if (response.chat_id && currentConversationId && !getCurrentConversation()?.backendChatId) {
+        setConversationBackendId(currentConversationId, response.chat_id);
+      }
+
       if (loadingMessage) {
         // Handle both response formats (response or content)
         const messageContent = response.content || response.response || 'No response received';
-        
+
         updateMessage(currentConversationId, loadingMessage.id, {
           content: messageContent,
           isLoading: false,
-          voiceSettings: response.voiceSettings, // Pass voice settings from backend
+          voiceSettings: response.voiceSettings,
         });
       }
     } catch (error) {
@@ -132,6 +132,7 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
+  const { firstName } = useAuth();
   const EmptyState = () => (
     <Box
       sx={{
@@ -145,10 +146,8 @@ export const ChatInterface: React.FC = () => {
         <img src={TalkTalkLogo} alt="TalkTalk" style={{ width: 80, height: 80 }} />
       </Box>
       <Typography variant="h3" sx={{ fontWeight: 600, color: '#1a1a1a', mb: 0.5, fontSize: '2rem', lineHeight: 1.2 }}>
-        What are We Building Today?
+        Hello {firstName ? `${firstName}, what can I help you with?` : 'What can I help you with?'}
       </Typography>
-      
-      
       {/* Centered Input */}
       <Box sx={{ width: '100%', maxWidth: '768px', mx: 'auto', px: 2 }}>
         <ChatInput
@@ -156,6 +155,9 @@ export const ChatInterface: React.FC = () => {
           disabled={isTyping}
         />
       </Box>
+      {/* <div className="logo-mark-animated">
+        <img src={TalkTalkLogoMark} alt="TalkTalk Logo Mark" className="logo-mark-img" />
+      </div> */}
     </Box>
   );
 

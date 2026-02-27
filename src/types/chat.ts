@@ -25,6 +25,7 @@ export interface Conversation {
   messages: ChatMessage[];
   createdAt: Date;
   updatedAt: Date;
+  backendChatId?: number;
 }
 
 export interface ChatState {
@@ -43,6 +44,7 @@ export interface ChatState {
   deleteConversation: (id: string) => void;
   addMessage: (conversationId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   updateMessage: (conversationId: string, messageId: string, updates: Partial<ChatMessage>) => void;
+  setConversationBackendId: (conversationId: string, backendChatId: number) => void;
   toggleSidebar: () => void;
   toggleTheme: () => void;
   setIsTyping: (isTyping: boolean) => void;
