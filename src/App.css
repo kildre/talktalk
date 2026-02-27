@@ -18,6 +18,45 @@ html, body {
 ::-webkit-scrollbar {
   width: 6px;
 }
+/* Logo Mark Animation Styles */
+.logo-mark-animated {
+  width: 120px;
+  margin: 32px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.logo-mark-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  animation: logoPulse 2.5s infinite cubic-bezier(.4,0,.6,1);
+}
+
+@keyframes logoPulse {
+  0% {
+    transform: scale(1);
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  25% {
+    transform: scale(1.12);
+    filter: hue-rotate(120deg) brightness(1.1);
+  }
+  50% {
+    transform: scale(1.25);
+    filter: hue-rotate(180deg) brightness(1.2);
+  }
+  75% {
+    transform: scale(1.12);
+    filter: hue-rotate(240deg) brightness(1.1);
+  }
+  100% {
+    transform: scale(1);
+    filter: hue-rotate(0deg) brightness(1);
+  }
+}
 
 ::-webkit-scrollbar-track {
   background: transparent;
